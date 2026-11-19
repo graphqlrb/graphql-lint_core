@@ -74,7 +74,6 @@ module GraphQL
           parser.on("-f", "--format NAME[:PATH]", "Add an output format") { |format| (overrides["format"] ||= []) << format }
           parser.on("--fail-level LEVEL", "Minimum failure severity") { |level| overrides["fail_level"] = level }
           parser.on("--max-warnings N", Integer, "Maximum warning count") { |count| overrides["max_warnings"] = count }
-          parser.on("--locale LOCALE", "Message language (en or ja)") { |locale| overrides["locale"] = locale }
           parser.on("-r", "--require PATH", "Load a Ruby extension") { |path| (overrides["require"] ||= []) << path }
           parser.on("--baseline PATH", "Read a baseline file") { |path| overrides["baseline"] = path }
           parser.on("--no-baseline", "Ignore the baseline") { overrides["baseline"] = nil }

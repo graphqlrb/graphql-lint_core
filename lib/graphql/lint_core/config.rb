@@ -14,7 +14,7 @@ module GraphQL
         "version" => 1, "require" => [], "fail_level" => "error", "rules" => {}, "ignore" => [],
         "suppression" => { "require_reason" => false, "report_unused" => "off" }
       }.freeze
-      OPTIONAL = %w[extends locale format max_warnings baseline only except quiet debug no_color git]
+      OPTIONAL = %w[extends format max_warnings baseline only except quiet debug no_color git]
       SCHEMA_KEYS = %w[sources prelude skip_checks emit_generated_sdl]
       module_function
 
@@ -36,7 +36,6 @@ module GraphQL
         fallback = defaults.fetch("extends", presets.key?("recommended") ? ["recommended"] : [])
         config = apply_extends(config, fallback, presets, keys, [], file: (input unless input.is_a?(Hash)))
         settings = merge(merge(initial, config), stringify(overrides))
-        settings["locale"] ||= ENV.fetch("GRAPHQL_LINT_LOCALE", "en")
         if filename && keys.include?("baseline") && !settings.key?("baseline")
           directory = input && !input.is_a?(Hash) ? File.dirname(File.expand_path(input)) : Dir.pwd
           default_path = File.join(directory, filename.delete_suffix(".yml") + "-baseline.json")
@@ -183,7 +182,6 @@ module GraphQL
         raise InputError, "version must be 1." unless settings["version"].eql?(1)
         check_strings(settings["require"], "require")
         optional_string(settings["baseline"], "baseline")
-        enum(settings["locale"], %w[en ja], "locale")
         enum(settings["fail_level"], SEVERITIES, "fail_level")
         warnings = settings["max_warnings"]
         if !warnings.nil? && (!warnings.is_a?(Integer) || warnings.negative?)

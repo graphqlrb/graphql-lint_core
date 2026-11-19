@@ -2,6 +2,8 @@
 
 Shared schema loading, operation validation, configuration, and diagnostics for the GraphQL Lint Suite. Each product gem installs this dependency automatically.
 
+See [shared configuration](docs/configuration.md) for schema sources, linter settings, and output formats.
+
 This gem requires Ruby 3.3 or later and graphql-ruby 2.5 or later in the 2.x series.
 
 ## Development

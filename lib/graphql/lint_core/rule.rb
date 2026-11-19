@@ -119,11 +119,10 @@ module GraphQL
         end
       end
 
-      attr_reader :options, :context, :locale
+      attr_reader :options, :context
 
-      def initialize(options: {}, severity: nil, locale: "en", diagnostics: [], translations: {})
-        @options, @locale, @diagnostics = options, locale, diagnostics
-        @translations = Config.stringify(translations)
+      def initialize(options: {}, severity: nil, diagnostics: [])
+        @options, @diagnostics = options, diagnostics
         @severity = severity || self.class.default_severity || :warning
       end
 
@@ -137,9 +136,6 @@ module GraphQL
       def report(member, key, location: :start, data: {}, related: [], coordinate: nil, subject: nil,
         severity: nil, operations: nil, suggestion: nil, **values)
         label = key.to_s
-        translation = @translations[label]
-        translated_message = translation.is_a?(Hash) ? translation["message"] : translation
-        translated_suggestion = translation.is_a?(Hash) ? translation["suggestion"] : @translations.dig("suggestions", label)
         coordinate ||= member.coordinate if member.respond_to?(:coordinate)
         position = member_location(member, location)
         operations ||= member.respond_to?(:operations) ? member.operations : []
@@ -147,8 +143,8 @@ module GraphQL
         path = member.path if member.respond_to?(:path) && !member.is_a?(Location)
         @diagnostics << Diagnostic.new(
           rule_id: self.class.id, severity: severity || @severity, message_key: label,
-          message: interpolate(translated_message || self.class.messages[label] || label, values),
-          suggestion: interpolate(suggestion || translated_suggestion || self.class.suggestions[label], values),
+          message: interpolate(self.class.messages[label] || label, values),
+          suggestion: interpolate(suggestion || self.class.suggestions[label], values),
           coordinate: coordinate, subject: subject, location: position, related: related,
           operations: operations, data: data, fingerprint_keys: self.class.fingerprint_keys, path: path
         )

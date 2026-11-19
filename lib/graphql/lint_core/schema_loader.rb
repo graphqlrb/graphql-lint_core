@@ -24,10 +24,10 @@ module GraphQL
       end
 
       def initialize(prelude: [], stdin: $stdin, skip_checks: [], emit_generated_sdl: nil,
-        base_dir: Dir.pwd, repository: nil, locale: "en")
+        base_dir: Dir.pwd, repository: nil)
         @prelude, @stdin = Array(prelude), stdin
         @skip_checks, @emit = skip_checks, emit_generated_sdl
-        @base_dir, @repository, @locale = base_dir, repository || base_dir, locale
+        @base_dir, @repository = base_dir, repository || base_dir
         @diagnostics = []
       end
 
@@ -51,7 +51,7 @@ module GraphQL
         Array(@skip_checks).each do |check|
           diagnostic("skipped-schema-check", "Schema check #{check} was skipped.", severity: :warning, fatal: false)
         end
-        @diagnostics.concat(TypeSystem.new(document, index, skip: @skip_checks, locale: @locale).validate)
+        @diagnostics.concat(TypeSystem.new(document, index, skip: @skip_checks).validate)
         return loaded if loaded.fatal?
 
         loaded.schema = index.schema = build(builder_document(document, index))

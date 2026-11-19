@@ -70,10 +70,10 @@ class TestLintCore < Minitest::Test
       File.write(File.join(dir, "base.yml"), "version: 1\nfail_level: warning\nrules: {rule-one: error}\n")
       file = File.join(dir, "project.yml")
       File.write(file, "version: 1\nextends: base.yml\nrules: {rule-one: off}\n")
-      config = Core::Config.load(file, defaults: {}, overrides: { locale: "ja" })
+      config = Core::Config.load(file, defaults: {}, overrides: { format: "json" })
       assert_equal "warning", config.fetch("fail_level")
       assert_includes [false, "off"], config.fetch("rules").fetch("rule-one")
-      assert_equal "ja", config.fetch("locale")
+      assert_equal "json", config.fetch("format")
       assert_raises(Core::InputError) { Core::Config.load({ version: 1, typo: "foo" }, defaults: {}) }
     end
   end
@@ -111,10 +111,9 @@ class TestSchemaInputs < Minitest::Test
     end
   end
 
-  def test_reports_type_failures_in_japanese
-    loaded = Core::SchemaLoader.load("-", stdin: StringIO.new("type Query { a: Missing }"), locale: "ja")
-    assert_match(/型.*Missing.*未定義/, loaded.fatal_diagnostics.first.message)
-    refute_match(/Unknown type/, loaded.fatal_diagnostics.first.message)
+  def test_reports_an_unknown_type_by_name
+    loaded = Core::SchemaLoader.load("-", stdin: StringIO.new("type Query { a: Missing }"))
+    assert_equal "Unknown type `Missing`.", loaded.fatal_diagnostics.fetch(0).message
   end
 
   def test_preserves_generated_sdl_locations_on_request

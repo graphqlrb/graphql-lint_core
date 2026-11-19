@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "psych"
-
 module GraphQL
   module LintCore
     class TypeSystem
@@ -10,16 +8,45 @@ module GraphQL
       INPUT_KINDS = %i[scalar enum input_object].freeze
       OUTPUT_KINDS = %i[scalar enum object interface union].freeze
       DIRECTIVE_LOCATIONS = GraphQL::Schema::Directive::LOCATIONS.map(&:to_s).freeze
-      MESSAGES = %w[en ja].to_h do |locale|
-        path = File.expand_path("../../../locales/#{locale}.yml", __dir__)
-        [locale, Psych.safe_load_file(path).fetch("type_system").freeze]
-      end.freeze
+      MESSAGES = {
+        executable_definition: "Executable definitions cannot be included in a schema.",
+        builtin_scalar: "Built-in scalar `%{name}` cannot be redefined.",
+        builtin_directive: "Built-in directive `@%{name}` cannot be redefined.",
+        invalid_extension: "Extension `%{name}` must match an existing type of the same kind.",
+        duplicate_schema: "There may only be one schema definition.",
+        duplicate_root: "The %{root} root is defined more than once.",
+        missing_query_root: "The schema requires a query root object.",
+        shared_root_type: "Root types must be distinct.",
+        invalid_root_type: "The %{operation} root `%{name}` must be an object type.",
+        invalid_one_of_field: "OneOf field `%{coordinate}` must be nullable and have no default.",
+        reserved_enum_value: "Enum value `%{name}` is reserved.",
+        empty_union: "Union `%{name}` must have members.",
+        unknown_type: "Unknown type `%{name}`.",
+        invalid_union_member: "Union member `%{name}` must be an object type.",
+        invalid_directive_locations: "Directive `%{coordinate}` has invalid or duplicate locations.",
+        deprecated_required_input: "Required input `%{coordinate}` cannot be deprecated.",
+        invalid_default: "Default value of `%{coordinate}` does not match `%{type}`.",
+        invalid_type_position: "Type `%{name}` is invalid in this position.",
+        invalid_interface: "`%{name}` is not a defined interface.",
+        missing_ancestor: "`%{name}` must also implement `%{ancestor}`.",
+        invalid_implementation: "`%{name}` must implement `%{coordinate}` with a compatible output type.",
+        missing_interface_argument: "`%{coordinate}` must provide argument `%{name}` of type `%{type}`.",
+        required_extra_argument: "Additional argument `%{coordinate}` must be optional.",
+        unknown_directive: "Unknown directive `@%{name}`.",
+        invalid_directive_position: "Directive `@%{name}` cannot be applied at %{location}.",
+        duplicate_application: "Directive `@%{name}` may only be applied once here.",
+        invalid_directive_argument: "Invalid argument `%{name}` for `%{coordinate}`.",
+        missing_directive_argument: "Directive `%{coordinate}` requires argument `%{name}`.",
+        cycle: "Type `%{name}` participates in a forbidden cycle.",
+        empty_type: "`%{name}` must declare at least one member.",
+        reserved_name: "Name `%{name}` is reserved for introspection.",
+        duplicate_definition: "Duplicate definition of `%{name}`.",
+      }.freeze
 
-      def initialize(document, index, skip: [], locale: "en")
+      def initialize(document, index, skip: [])
         @document = document
         @index = index
         @skipped = Array(skip)
-        @locale = locale
         @diagnostics = []
         unknown = @skipped - CHECKS
         raise InputError, "Unknown schema checks: #{unknown.join(", ")}." unless unknown.empty?
@@ -344,7 +371,7 @@ module GraphQL
       def report(check, key, node, target = nil, **values)
         return if @skipped.include?(check)
 
-        template = MESSAGES.fetch(@locale, MESSAGES.fetch("en")).fetch(key.to_s)
+        template = MESSAGES.fetch(key.to_sym)
         message = values.empty? ? template : template % values
         @diagnostics << Diagnostic.new(rule_id: "core/invalid-schema", severity: :error, message: message,
           coordinate: target, location: @index.source(node)&.location(node), fatal: true,
